@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <title>Simulações de Horários</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    <body>
+        <h1>Horários Escolares</h1>
+        <h2>Legenda de Códigos (Disciplinas e Professores)</h2>
+        <div class="legenda-container">
+            <table class="tabela-legenda">
+                <thead>
+                    <tr>
+                        <th>Período</th>
+                        <th>Nome da Matéria</th>
+                        <th>Código da Matéria</th>
+                        <th>Nome do Professor</th>
+                        <th>Código do Professor</th>
+                        <th>Código Combinado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in prof_materia %}
+                    <tr>
+                        <td>{{ item.periodo }}</td>
+                        <td>{{ item.nome_materia }}</td>
+                        <td>{{ item.cod_materia }}</td>
+                        <td>{{ item.professor}}</td>
+                        <td>{{ item.cod_professor }}</td>
+                        <td>{{ item.cod_combinado }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h2>Simulações</h2>
+            <table class="tabela-simulacoes">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        {% for i in range(1, 101) %}
+                            <th>{{ i }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for linha in simulacoes %}
+                        <tr>
+                            <td><strong>{{ loop.index }}</strong></td>
+                            {% for codigo in linha %}
+                                <td>{{ codigo }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div>
+                <h2>Conflitos por simulações</h2>
+                {% for sim in conflitos_simulacoes %}
+                <h3>Simulação {{ sim.id }}</h3>
+                <table border="1" class="tabelas-conflitos">
+                    <thead>
+                    <tr>
+                        <th>Dia / Horário</th>
+                        {% for h in range(20) %}
+                        <th>{{ h + 1 }}</th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for linha in sim.matriz %}
+                        {% set dia = loop.index0 %}
+                        <tr>
+                        <td>
+                            {% if dia == 0 %}Seg{% elif dia == 1 %}Ter{% elif dia == 2 %}Qua
+                            {% elif dia == 3 %}Qui{% elif dia == 4 %}Sex{% endif %}
+                        </td>
+                        {% for celula in linha %}
+                            {% set h = loop.index0 %}
+                            {% set conflito = (dia, h) in sim.conflitos %}
+                            <td class="{% if conflito %}conflito {% endif %}{% if (h + 1) % 4 == 0 %}divisor{% endif %}">
+                                {{ celula }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% endfor %}
+            </div>
+            <h2>Ranking de Simulações por Menor Quantidade de Conflitos</h2>
+            <table border="1">
+                <thead>
+                    <tr>
+                    <th>Posição</th>
+                    {% for r in ranking %}
+                        <th>{{ loop.index }}</th>
+                    {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                    <td>Simulação</td>
+                    {% for r in ranking %}
+                        <td>Simulação {{ r.id }}</td>
+                    {% endfor %}
+                    </tr>
+                    <tr>
+                    <td>Conflitos</td>
+                    {% for r in ranking %}
+                        <td>{{ r.qtd_conflitos }}</td>
+                    {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+            <div>
+                <h2>Simulações de Horários (Ordenadas por Quantidade de Conflitos)</h2>
+                <table border="1">
+                <thead>
+                    <tr>
+                    <th>#</th>
+                    {% for i in range(1, 101) %}
+                        <th>{{ i }}</th>
+                    {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sim in ranking %}
+                    <tr>
+                        <td><strong>{{ sim.id }}</strong></td>
+                        {% set matriz = sim.matriz %}
+                        {% set conflitos = sim.conflitos %}
+                        {% for i in range(5) %}
+                        {% for j in range(20) %}
+                            {% set linear_idx = i * 20 + j %}
+                            {% set conflito = (i, j) in conflitos %}
+                            <td {% if conflito %}class="conflito"{% endif %}>
+                            {{ matriz[i][j] }}
+                            </td>
+                        {% endfor %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+            </div>
+            <h2>Pais Selecionados</h2>
+            <p><strong>Pai 1:</strong> Simulação {{ num_linha_pai1 }} (melhor metade) | <strong>Pai 2:</strong> Simulação {{ num_linha_pai2 }} (qualquer posição)</p>
+            <table border="1">
+                <thead>
+                    <tr>
+                    <th>#</th>
+                    {% for i in range(1, 101) %}
+                        <th>{{ i }}</th>
+                    {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                    <td><strong>Pai 1</strong></td>
+                    {% for cel in linha_pai1 %}
+                        <td>{{ cel }}</td>
+                    {% endfor %}
+                    </tr>
+                    <tr>
+                    <td><strong>Pai 2</strong></td>
+                    {% for cel in linha_pai2 %}
+                        <td>{{ cel }}</td>
+                    {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Filhos Gerados (com cruzamento visual)</h2>
+            <table border="1">
+            <thead>
+                <tr>
+                <th>#</th>
+                {% for i in range(1, 101) %}
+                    <th>{{ i }}</th>
+                {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Filho 1</strong></td>
+                    {% for i in range(100) %}
+                        {% set origem = blocos_origem[i] %}
+                        {% set cel = filho1[i] %}
+                        {% set cor = '#c6e2ff' if origem == 'P1' else '#ffe5b4' %}
+                        <td style="background-color: {{ cor }}">{{ cel }}</td>
+                    {% endfor %}
+                    </tr>
+
+                    <tr>
+                    <td><strong>Filho 2</strong></td>
+                    {% for i in range(100) %}
+                        {% set origem = blocos_origem[i] %}
+                        {% set cel = filho2[i] %}
+                        {% set cor = '#ffe5b4' if origem == 'P1' else '#c6e2ff' %}
+                        <td style="background-color: {{ cor }}">{{ cel }}</td>
+                    {% endfor %}
+                    </tr>
+            </tbody>
+            </table>
+
+            <h2>Mutação Genética</h2>
+            <table border="1">
+            <thead>
+                <tr>
+                <th>#</th>
+                {% for i in range(1, 101) %}
+                    <th>{{ i }}</th>
+                {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Filho 1 Original -->
+                <tr>
+                <td><strong>Filho 1 (Antes)</strong></td>
+                {% for i in range(100) %}
+                    <td>{{ filho1[i] }}</td>
+                {% endfor %}
+                </tr>
+                <!-- Filho 1 Mutado -->
+                <tr>
+                <td><strong>Filho 1 (Depois)</strong></td>
+                {% for i in range(100) %}
+                    <td {% if i in trocas_filho1 %} style="background-color: #dd7373;" {% endif %}>
+                    {{ filho1_mutado[i] }}
+                    </td>
+                {% endfor %}
+                </tr>
+
+                <!-- Filho 2 Original -->
+                <tr>
+                <td><strong>Filho 2 (Antes)</strong></td>
+                {% for i in range(100) %}
+                    <td>{{ filho2[i] }}</td>
+                {% endfor %}
+                </tr>
+                <!-- Filho 2 Mutado -->
+                <tr>
+                <td><strong>Filho 2 (Depois)</strong></td>
+                {% for i in range(100) %}
+                    <td {% if i in trocas_filho2 %} style="background-color: #ffd6d6;" {% endif %}>
+                    {{ filho2_mutado[i] }}
+                    </td>
+                {% endfor %}
+                </tr>
+            </tbody>
+            </table>
+
+            <h2>🏆 Melhor Indivíduo Encontrado</h2>
+            <p><strong>Conflitos:</strong> {{ melhor.qtd_conflitos }}</p>
+
+            <h3>Representação Linear (100 genes)</h3>
+            <table class="tabela-simulacao">
+                <tr>
+                    {% for cod in melhor.simulacao %}
+                        <td>{{ cod }}</td>
+                    {% endfor %}
+                </tr>
+            </table>
+
+            <h3>Matriz 5x20 (Períodos vs Horários)</h3>
+            <table class="tabela-simulacao">
+                <thead>
+                    <tr>
+                        <th>Período ↓ / Horário →</th>
+                        {% for h in range(1, 21) %}
+                            <th>{{ h }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in range(5) %}
+                        <tr>
+                            <th>Período {{ i + 1 }}</th>
+                            {% for j in range(20) %}
+                                <td>{{ melhor.simulacao[i * 20 + j] }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+    </body>
+</html>

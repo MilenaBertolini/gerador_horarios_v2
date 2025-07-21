@@ -1,0 +1,112 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+h1{
+  margin: 40px 24px;
+  text-align: center;
+}
+
+table {
+  overflow-x: auto;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 16px;
+  min-width: 1200px; 
+}
+
+th, td {
+  border: 1px solid #ccc;
+  text-align: center;
+  padding: 8px;
+  word-wrap: break-word;
+}
+
+thead th {
+  background-color: #006699;
+  color: white;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+tbody th {
+  background-color: #f2f2f2;
+  color: #333;
+  font-weight: bold;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+tbody td {
+  border: 1px solid #ddd;
+}
+
+.legenda-container {
+  margin: 30px 0;
+  max-width: 800px; /* Define a largura máxima da legenda */
+  padding: 0 10px;
+}
+
+.tabela-legenda {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px; /* Fonte menor */
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+}
+
+.tabela-legenda th {
+  background-color: #444;
+  color: #fff;
+  text-transform: uppercase;
+  padding: 6px;
+  border: 1px solid #aaa;
+}
+
+.tabela-legenda td {
+  background-color: #fdfdfd;
+  padding: 5px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.tabela-legenda tbody tr:nth-child(even) {
+  background-color: #f6f6f6;
+}
+
+.tabela-legenda tbody tr:hover {
+  background-color: #eef5ff;
+}
+
+.conflito {
+  background-color: #fcc0c0 !important; /* vermelho clarinho */
+}
+
+
+.tabelas-conflitos tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+ /* borda extra nas colunas de separação (4, 8, 12, 16) */
+.tabelas-conflitos  .divisor {
+    border-right: 2px solid #444;
+}
+
+.tabelas-conflitos  .conflito {
+    background-color: #f08080;
+}
+
+.tabela-simulacoes{
+  overflow-y: scroll;
+}
