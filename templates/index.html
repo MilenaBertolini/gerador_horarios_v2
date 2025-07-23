@@ -57,38 +57,50 @@
 
             <div>
                 <h2>Conflitos por simulações</h2>
+
                 {% for sim in conflitos_simulacoes %}
-                <h3>Simulação {{ sim.id }}</h3>
-                <table border="1" class="tabelas-conflitos">
-                    <thead>
-                    <tr>
-                        <th>Dia / Horário</th>
-                        {% for h in range(20) %}
-                        <th>{{ h + 1 }}</th>
-                        {% endfor %}
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for linha in sim.matriz %}
-                        {% set dia = loop.index0 %}
-                        <tr>
-                        <td>
-                            {% if dia == 0 %}Seg{% elif dia == 1 %}Ter{% elif dia == 2 %}Qua
-                            {% elif dia == 3 %}Qui{% elif dia == 4 %}Sex{% endif %}
-                        </td>
-                        {% for celula in linha %}
-                            {% set h = loop.index0 %}
-                            {% set conflito = (dia, h) in sim.conflitos %}
-                            <td class="{% if conflito %}conflito {% endif %}{% if (h + 1) % 4 == 0 %}divisor{% endif %}">
-                                {{ celula }}
-                            </td>
+                    <h3>Simulação {{ sim.id }}</h3>
+
+                    <table border="1" class="tabelas-conflitos">
+                        <thead>
+                            <tr>
+                                <th>Dia / Horário</th>
+                                <th>1</th>
+                                <th>2</th>
+                                <th>3</th>
+                                <th>4</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for periodo in range(5) %}
+                                {% set offset = periodo * 4 %}
+                                <tr><td colspan="5" style="text-align:center; font-weight:bold;">Período {{ periodo + 1 }}</td></tr>
+
+                                {% for dia in range(5) %}
+                                    <tr>
+                                        <td>
+                                            {% if dia == 0 %}Seg{% elif dia == 1 %}Ter
+                                            {% elif dia == 2 %}Qua{% elif dia == 3 %}Qui
+                                            {% elif dia == 4 %}Sex{% endif %}
+                                        </td>
+
+                                        {% for aula in range(4) %}
+                                            {% set index = offset + aula %}
+                                            {% set celula = sim.matriz[dia][index] %}
+                                            {% set conflito = (dia, index) in sim.conflitos %}
+                                            <td {% if conflito %}style="background-color: #ffcccc;"{% endif %}>
+                                                {{ celula }}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
                             {% endfor %}
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
                 {% endfor %}
             </div>
+            
             <h2>Ranking de Simulações por Menor Quantidade de Conflitos</h2>
             <table border="1">
                 <thead>

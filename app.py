@@ -51,58 +51,75 @@ def associar_prof_materia():
         
     return prof_materia
 
+import random
+
+import random
+
 def gerar_simulacoes_horarios(prof_materia, qtd_simulacoes=50):
     simulacoes = []
 
-    for i in range(qtd_simulacoes):
-        visao_geral = prof_materia 
-        linha = [None] * 100  
+    for _ in range(qtd_simulacoes):
+        visao_geral = prof_materia
+        linha = [None] * 100
 
-        for p in range(1, 6):
-            horarios_periodo = list(range(20))  
+        conflitos_dia_horario = {
+            dia: {h: set() for h in range(4)}
+            for dia in range(5)
+        }
+
+        for p in range(1, 6):  # períodos 1 a 5
+            horarios_periodo = list(range(20))  # índices 0 a 19 do período
             random.shuffle(horarios_periodo)
 
             disciplinas = [d for d in visao_geral if d["periodo"] == p]
             prof_por_periodo = {}
-            alocacoes_periodo = [None] * 20
 
             for disc in disciplinas:
                 aulas_alocadas = 0
                 tentativas = 0
 
-                while aulas_alocadas < 4 and tentativas < 100:
+                while aulas_alocadas < 4 and tentativas < 100 and horarios_periodo:
                     idx = horarios_periodo.pop()
                     real_idx = (p - 1) * 20 + idx
                     prof = disc["cod_professor"]
 
-                    if prof_por_periodo.get(prof, 0) >= 2:
-                        horarios_periodo.insert(0, idx)
+                    dia = real_idx // 20  # 0 a 4
+                    horario_relativo = idx % 4  # 0 a 3
+
+                    if prof in conflitos_dia_horario[dia][horario_relativo]:
                         tentativas += 1
                         continue
 
                     if linha[real_idx] is None:
                         linha[real_idx] = disc["cod_combinado"]
                         prof_por_periodo[prof] = prof_por_periodo.get(prof, 0) + 1
+                        conflitos_dia_horario[dia][horario_relativo].add(prof)
                         aulas_alocadas += 1
                     else:
                         tentativas += 1
-                        horarios_periodo.insert(0, idx)
 
+            # ⚠️ Preencher forçando se necessário (com possível conflito)
             for i in range(20):
                 real_idx = (p - 1) * 20 + i
-                if linha[real_idx] is None:
-                    disc = random.choice(disciplinas)
-                    prof = disc["cod_professor"]
-                    if prof_por_periodo.get(prof, 0) < 2:
-                        linha[real_idx] = disc["cod_combinado"]
-                        prof_por_periodo[prof] = prof_por_periodo.get(prof, 0) + 1
-                    else:
+                if linha[real_idx] is None and disciplinas:
+                    random.shuffle(disciplinas)
+                    alocou = False
+                    for disc in disciplinas:
+                        prof = disc["cod_professor"]
+                        dia = real_idx // 20
+                        horario_relativo = i % 4
+                        if prof not in conflitos_dia_horario[dia][horario_relativo]:
+                            linha[real_idx] = disc["cod_combinado"]
+                            conflitos_dia_horario[dia][horario_relativo].add(prof)
+                            alocou = True
+                            break
+                    if not alocou:
+                        disc = random.choice(disciplinas)
                         linha[real_idx] = disc["cod_combinado"]
 
         simulacoes.append(linha)
 
     return simulacoes
-
 
 def processar_simulacoes_com_conflitos(simulacoes):
     resultado_processado = []
@@ -125,43 +142,53 @@ def processar_simulacoes_com_conflitos(simulacoes):
 
 def detectar_conflitos_em_matriz(matriz):
     """
-    Detecta conflitos reais por horário, considerando que:
-    - Cada dia tem 20 células (5 períodos × 4 horários)
-    - Cada grupo de 4 células consecutivas forma os horários de 1 período
-    - Colunas com professores repetidos (em horários iguais de períodos diferentes) são conflitos
+    Marca conflitos reais: o mesmo professor em mesmo horário relativo
+    (1ª a 4ª aula) em mais de um período, no mesmo dia.
     """
-    conflitos = []
+    conflitos = set()
 
-    for dia_idx, dia in enumerate(matriz):  # matriz = 5x20
-        # Quebrar o dia em 5 períodos de 4 horários
-        periodos = [dia[i*4:(i+1)*4] for i in range(5)]  # 5x4
+    for dia_idx, dia in enumerate(matriz):  # 0 a 4
+        # separa os 5 períodos do dia, cada um com 4 aulas
+        periodos = [dia[i * 4:(i + 1) * 4] for i in range(5)]
 
-        # Transpor para 4 colunas (cada horário real do dia)
-        for col in range(4):  # horários reais do dia
-            professores = {}
-            for per in range(5):  # 5 períodos
-                cod_combinado = periodos[per][col]
-                cod_prof = cod_combinado[-2:]
+        for aula_idx in range(4):  # 1ª a 4ª aula
+            ocorrencias_prof = {}  # {professor: [pos1, pos2...]}
 
-                if cod_prof in professores:
-                    # Marca o conflito atual + todos anteriores com mesmo prof
-                    conflitos.append((dia_idx, per * 4 + col))
-                    conflitos.append((dia_idx, professores[cod_prof]))
-                else:
-                    professores[cod_prof] = per * 4 + col
+            for periodo_idx in range(5):
+                bloco = periodos[periodo_idx][aula_idx]
+                if not bloco:
+                    continue
 
-    return list(set(conflitos))  # remove duplicatas
+                prof = str(bloco)[-2:]
+                pos_abs = periodo_idx * 4 + aula_idx
+
+                if prof not in ocorrencias_prof:
+                    ocorrencias_prof[prof] = []
+                ocorrencias_prof[prof].append(pos_abs)
+
+            # após agrupar todas as ocorrências no mesmo horário,
+            # adiciona no set de conflitos apenas se houver dois ou mais
+            for posicoes in ocorrencias_prof.values():
+                if len(posicoes) > 1:
+                    for pos in posicoes:
+                        conflitos.add((dia_idx, pos))
+
+    return list(conflitos)
 
 def converter_simulacao_para_matriz(simulacao):
     """
-    Converte a linha (100 códigos) para uma matriz 5x20.
-    Linha = [segunda, terça, quarta, quinta, sexta] → cada um com 20 blocos
+    Converte uma linha com 100 posições (5 períodos × 20 aulas)
+    para uma matriz 5x20 (5 dias, cada um com 20 aulas: 4 por período)
     """
     matriz = []
-    for dia in range(5):  # Segunda (0) a Sexta (4)
-        inicio = dia * 20
-        fim = inicio + 20
-        matriz.append(simulacao[inicio:fim])
+
+    for dia in range(5):  # Segunda a Sexta
+        linha_dia = []
+        for periodo in range(5):  # 5 períodos
+            inicio = periodo * 20 + dia * 4
+            fim = inicio + 4
+            linha_dia.extend(simulacao[inicio:fim])
+        matriz.append(linha_dia)
     
     return matriz
 
